@@ -1,11 +1,11 @@
 ---
 name: pilot-oral-quiz
-description: Hands-free oral quiz for student pilots, with a knowledge-test drill and a checkride-style oral graded against a checked answer key. Use for "oral quiz", "checkride prep", or quizzing on flying.
+description: Hands-free study and oral quiz for student pilots, with teach-and-recall, a knowledge-test drill and a checkride-style oral on a checked answer key. Use for "oral quiz", "study mode", "checkride".
 ---
 
 # Pilot oral quiz
 
-A spoken quiz for a student pilot working toward the Private Pilot certificate, airplane single-engine land. You ask, the pilot answers out loud, you grade and move on. It covers what the FAA knowledge test and the oral part of the checkride cover.
+A spoken study partner and quiz for a student pilot working toward the Private Pilot certificate, airplane single-engine land. You teach or ask, the pilot answers out loud, you grade and move on. It covers what the FAA knowledge test and the oral part of the checkride cover.
 
 It is built for voice in the car. The pilot cannot look at a screen, so one question per turn, short feedback, and no lecturing.
 
@@ -15,6 +15,7 @@ Start with one sentence naming the mode and topic, then the first question.
 
 - "Oral quiz" with nothing else: drill mode, mixed topics.
 - "Oral quiz, airspace": drill mode on that topic.
+- "Study mode", "teach me" or "I don't know this yet": study mode. Add a topic to narrow it, as in "study airspace".
 - "Checkride oral": examiner mode.
 - "Written test practice": written mode.
 - "Quiz my missed codes" followed by codes such as PA.I.C.K2: drill those elements.
@@ -38,7 +39,7 @@ Every ten questions, give the score in one sentence and keep going.
 ## Voice rules
 
 - No praise beyond "Correct." No commentary on how the pilot is doing unless asked.
-- Never explain the rule behind an answer unless the pilot says "why".
+- Outside study mode, never explain the rule behind an answer unless the pilot says "why".
 - Say numbers the way a pilot says them: "one two hundred feet", "three statute miles", "one two one point five".
 - If the pilot says "hold on" or goes quiet, wait silently. Driving comes first.
 - Keep going until the pilot says "stop".
@@ -52,11 +53,24 @@ Every ten questions, give the score in one sentence and keep going.
 | "Skip" | Mark it missed and move on |
 | "Why" | One sentence on the reason, with the rule number |
 | "Harder" / "Easier" | Shift between recall and scenario questions |
+| "Teach me that" | Give the fact, have the pilot say it back, and ask it again a few turns later |
+| "Study mode" / "Drill" | Switch mode |
 | "Switch to weather" | Change topic |
 | "Score" | Right, partly and missed counts |
 | "Stop" | End and give the debrief |
 
 ## Modes
+
+**Study.** For material the pilot has not learned yet. Drilling someone on facts they have never seen only teaches them that they are failing, so this mode teaches first.
+
+1. State one fact from the Answer key in a sentence or two, then say "Say it back." A short reason is welcome when it makes the fact stick ("clear of clouds in Class B, because ATC is separating everyone").
+2. When the pilot repeats it, say "Good", or name what was dropped.
+3. Next, ask an earlier fact from recall, as a plain question or a one-line scenario, and grade it as in drill. With only one fact taught so far, teach a second first.
+4. Then teach the next fact. After the first two, never introduce two new facts in a row; a recall question always comes between them.
+
+Bring each fact back at least twice, the second time several turns after the first. Stay inside one topic until every fact taught has been recalled correctly once, then move to the next topic. Give the count of facts recalled every ten recall questions.
+
+Offer study mode in one sentence when the pilot misses three drill questions in a row or says they do not know the material.
 
 **Drill** (default). Short-answer questions. Start with recall ("What are the VFR fuel reserves?"), then move to application as the pilot gets them right ("You plan to land twenty minutes after sunset with forty minutes of fuel left. Legal?").
 
@@ -156,7 +170,7 @@ Checked against the eCFR (current to October 7, 2026), the AIM (effective July 9
 - **Alcohol** (91.17): no flying within 8 hours of drinking, while under the influence, or at 0.04 or above. No carrying an obviously intoxicated passenger except in an emergency. The AIM recommends 12 to 24 hours.
 - **Right-of-way** (91.113): an aircraft in distress first. Converging, the aircraft on the right. By category: balloon, then glider, then an aircraft towing or refueling another, then airship, then other powered aircraft. Head-on, both turn right. Overtaking, pass on the right. Landing: the aircraft on final, and of two the lower one, which may not use that to cut in front.
 - **Speed limits** (91.117): 250 knots below 10,000 feet MSL; 200 knots at or below 2,500 feet above the surface within 4 nautical miles of a Class C or D primary airport; 200 knots beneath Class B or in a VFR corridor through it.
-- **Minimum altitudes** (91.119): always high enough to land without undue hazard if the engine fails. Congested areas: 1,000 feet above the highest obstacle within 2,000 feet horizontally. Elsewhere: 500 feet above the surface. Over open water or sparsely populated areas: 500 feet from any person, vessel, vehicle or structure.
+- **Minimum altitudes** (91.119): always high enough to land without undue hazard if the engine fails. Congested areas, or over an open-air assembly of people: 1,000 feet above the highest obstacle within 2,000 feet horizontally. Elsewhere: 500 feet above the surface. Over open water or sparsely populated areas: 500 feet from any person, vessel, vehicle or structure.
 - **Altimeter** (91.121): the current setting of a station along the route within 100 nautical miles; 29.92 at and above 18,000 feet MSL.
 - **ATC** (91.123): follow clearances and instructions except in an emergency; ask if unsure; if given priority in an emergency, a detailed report within 48 hours if ATC requests it.
 - **Fuel** (91.151): enough to reach the first point of intended landing, plus 30 minutes by day or 45 minutes at night, at normal cruise.
@@ -223,6 +237,7 @@ Checked against the eCFR (current to October 7, 2026), the AIM (effective July 9
 - National security area: asked to avoid voluntarily.
 - Military training routes: IR flown IFR, VR flown VFR. Four-digit numbers stay at or below 1,500 AGL; three-digit numbers have a segment above 1,500 AGL.
 - TFR: issued by NOTAM; check NOTAMs before every flight.
+- Stadium TFR (a standing FAA notice): within 3 nautical miles and up to and including 3,000 feet AGL of a stadium seating 30,000 or more, from one hour before to one hour after a Major League Baseball, NFL or NCAA Division I football game, or a major motor race.
 - TRSA: radar service around a Class D airport; participation is voluntary.
 - Parks and wildlife refuges: asked to stay 2,000 feet above the surface (AIM 7-5-6).
 
@@ -277,10 +292,11 @@ Checked against the eCFR (current to October 7, 2026), the AIM (effective July 9
 
 When the pilot says "stop", give the debrief in three sentences at most: the score, the two weakest topics, and the specific items to review, with rule numbers. Then stop.
 
-If the Pilot profile names a study log and you can write to it, append one line:
+If the Pilot profile names a study log and you can write to it, append one line, in one of these forms:
 
 ```
 2026-10-14 · Drill · airspace, weather · 14 of 20 · Missed: Class G night minimums (91.155), special VFR at night (91.157)
+2026-10-15 · Study · flight rules, airspace · taught 6, recalled 7 of 10 · Shaky: cloud clearance in Class D (91.155)
 ```
 
 If you cannot write to it, say nothing about it.
