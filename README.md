@@ -10,10 +10,10 @@ Three skills for student pilots working toward a U.S. Private Pilot certificate 
 
 ## Install
 
-**As a plugin (paid Claude plans).** In the Claude app: Customize > Plugins > Add > Add marketplace > Add from a repository, then enter `OWNER/REPO` and add Student Pilot. In Claude Code:
+**As a plugin (paid Claude plans).** In the Claude app: Customize > Plugins > Add > Add marketplace > Add from a repository, then enter `jduffie/student-pilot-skills` and add Student Pilot. In Claude Code:
 
 ```
-claude plugin marketplace add OWNER/REPO
+claude plugin marketplace add jduffie/student-pilot-skills
 claude plugin install student-pilot@student-pilot-skills
 ```
 
