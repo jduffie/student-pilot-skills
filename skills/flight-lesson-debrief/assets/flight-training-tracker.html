@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flight training tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E8EEE4; --panel:#F6F9F3; --ink:#18263A; --muted:#55657A; --line:#B9C6BC;
+  --blue:#2A5CA6; --magenta:#A81E66; --tint:#DCE6D8; --warn-bg:#F3E3A0; --warn-ink:#443600;
+  --body:"Barlow","Helvetica Neue",Arial,sans-serif;
+  --display:"Barlow Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1824; --panel:#152233; --ink:#E1E8F0; --muted:#94A5B8; --line:#2C3D52;
+    --blue:#7DB0F2; --magenta:#EE72B0; --tint:#1B2B3F; --warn-bg:#3A3212; --warn-ink:#F0DC8A;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1824; --panel:#152233; --ink:#E1E8F0; --muted:#94A5B8; --line:#2C3D52;
+  --blue:#7DB0F2; --magenta:#EE72B0; --tint:#1B2B3F; --warn-bg:#3A3212; --warn-ink:#F0DC8A;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:1rem;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:72rem;margin:0 auto;padding:2rem 1.25rem 3rem}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;gap:1rem 2rem;align-items:flex-end;justify-content:space-between;padding-bottom:1.25rem;border-bottom:2px solid var(--ink)}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(2.25rem,6vw,3.5rem);line-height:1;letter-spacing:-.01em;margin:0}
+.summary{margin:.5rem 0 0;color:var(--muted);max-width:40rem}
+.summary strong{color:var(--ink);font-weight:600}
+.switch{display:inline-flex;border:1.5px solid var(--ink);border-radius:999px;padding:3px;background:var(--panel)}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.switch label{padding:.45rem 1rem;border-radius:999px;cursor:pointer;font-weight:500;font-size:.95rem;white-space:nowrap}
+.switch input:checked + label{background:var(--ink);color:var(--paper)}
+.switch input:focus-visible + label{outline:2px solid var(--magenta);outline-offset:2px}
+
+/* layout */
+.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:2.5rem;margin-top:2rem}
+@media (min-width:60rem){
+  .cols{grid-template-columns:minmax(0,1fr) 21rem;gap:3rem}
+  .side{position:sticky;top:1.25rem;align-self:start;max-height:calc(100vh - 2.5rem);overflow:auto}
+}
+
+/* route */
+.stage-title{font-family:var(--display);font-weight:600;font-size:1.75rem;line-height:1.1;margin:2.5rem 0 1rem}
+.stage-title:first-child{margin-top:0}
+.route{position:relative;padding-left:2.25rem}
+.route::before{content:"";position:absolute;left:.6rem;top:.5rem;bottom:.5rem;width:2px;background:var(--line)}
+.phase{position:relative;padding-bottom:1.75rem}
+.phase:last-child{padding-bottom:0}
+.node{position:absolute;left:-2.25rem;top:.2rem;width:1.3rem;height:1.3rem;border-radius:50%;border:2px solid var(--blue);background:var(--paper)}
+.phase.complete .node{background:var(--blue)}
+.phase-head{display:flex;align-items:baseline;gap:.75rem;justify-content:space-between}
+.phase-head h3{font-family:var(--display);font-weight:600;font-size:1.35rem;line-height:1.2;margin:0}
+.count{color:var(--muted);font-size:.9rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.phase-note{margin:.25rem 0 0;color:var(--muted);font-size:.95rem;max-width:38rem}
+.caution{margin:.6rem 0 0;padding:.55rem .75rem;background:var(--warn-bg);color:var(--warn-ink);border-radius:4px;font-size:.92rem;max-width:38rem}
+.items{list-style:none;margin:.6rem 0 0;padding:0;border-top:1px solid var(--line)}
+.item{display:grid;grid-template-columns:1.5rem minmax(0,1fr) auto;gap:.1rem .7rem;align-items:start;padding:.6rem 0;border-bottom:1px solid var(--line)}
+.item input[type=checkbox]{width:1.15rem;height:1.15rem;margin:.2rem 0 0;accent-color:var(--blue);cursor:pointer}
+.item input[type=checkbox]:disabled{cursor:default}
+.item label{cursor:pointer}
+.item.done label{color:var(--muted)}
+.item .detail{grid-column:2 / -1;color:var(--muted);font-size:.88rem}
+.item .when{color:var(--muted);font-size:.85rem;white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:.1rem}
+.item .bar{grid-column:2 / -1;margin-top:.3rem}
+.item.milestone{border-bottom:none;padding-top:.9rem}
+.item.milestone label{font-family:var(--display);font-weight:600;font-size:1.3rem;line-height:1.2;color:var(--magenta)}
+.item.milestone input[type=checkbox]{accent-color:var(--magenta)}
+.apt{position:absolute;left:-2.42rem;width:1.65rem;height:1.65rem;color:var(--magenta);background:var(--paper);border-radius:50%}
+.item.milestone{position:relative}
+.item.milestone .apt{top:.75rem}
+.item.milestone.done .apt circle{fill:currentColor}
+
+/* bars */
+.bar{height:6px;border-radius:3px;background:var(--tint);overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--blue);border-radius:3px;transition:width .3s ease}
+.bar.full > i{background:var(--magenta)}
+@media (prefers-reduced-motion:reduce){.bar > i{transition:none}}
+
+/* side */
+.side h2{font-family:var(--display);font-weight:600;font-size:1.5rem;line-height:1.1;margin:0 0 .75rem}
+.side section + section{margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--line)}
+.meter{margin-bottom:.8rem}
+.meter-row{display:flex;justify-content:space-between;gap:1rem;font-size:.95rem;margin-bottom:.25rem}
+.meter-row span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
+.group-name{font-weight:600;font-size:.95rem;margin:1rem 0 .5rem}
+.group-name:first-of-type{margin-top:0}
+
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:.7rem .75rem}
+.field{display:flex;flex-direction:column;gap:.2rem;font-size:.88rem;color:var(--muted)}
+.field.wide{grid-column:1 / -1}
+.field input,.field select{font:inherit;font-size:1rem;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:.45rem .55rem;width:100%;min-width:0}
+.field input:focus-visible,.field select:focus-visible,button:focus-visible,.item input:focus-visible{outline:2px solid var(--magenta);outline-offset:2px}
+.hint{font-size:.85rem;color:var(--muted);margin:.6rem 0 0}
+.error{font-size:.9rem;color:var(--magenta);margin:.6rem 0 0;min-height:0}
+button{font:inherit;cursor:pointer}
+.primary{margin-top:.9rem;width:100%;padding:.6rem 1rem;border:none;border-radius:4px;background:var(--ink);color:var(--paper);font-weight:600}
+.primary:disabled{opacity:.5;cursor:default}
+.quiet{background:none;border:none;padding:0;color:var(--blue);text-decoration:underline;text-underline-offset:2px;font-size:.88rem}
+.quiet:disabled{opacity:.5;cursor:default}
+
+.flights{list-style:none;margin:0;padding:0}
+.flight{padding:.55rem 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.flight-top{display:flex;justify-content:space-between;gap:.75rem;align-items:baseline}
+.flight-top strong{font-weight:600;font-variant-numeric:tabular-nums}
+.flight .tags{color:var(--muted);font-size:.85rem}
+.empty{color:var(--muted);font-size:.95rem;margin:0}
+
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;justify-content:space-between;color:var(--muted);font-size:.88rem}
+footer p{margin:0;max-width:44rem}
+.confirm{display:inline-flex;gap:.75rem;align-items:baseline}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Flight training</h1>
+      <p class="summary" id="summary" aria-live="polite"></p>
+    </div>
+    <div class="switch" role="radiogroup" aria-label="Training track">
+      <input type="radio" name="track" id="trackA" value="A"><label for="trackA">Private direct</label>
+      <input type="radio" name="track" id="trackB" value="B"><label for="trackB">Sport, then Private</label>
+    </div>
+  </header>
+
+  <div class="cols">
+    <main id="checklist" aria-label="Training checklist"></main>
+
+    <aside class="side">
+      <section aria-labelledby="hoursH">
+        <h2 id="hoursH">Hours</h2>
+        <div id="meters"></div>
+      </section>
+
+      <section aria-labelledby="logH">
+        <h2 id="logH">Log a flight</h2>
+        <div class="fields" id="logForm">
+          <label class="field">Date<input type="date" id="fDate"></label>
+          <label class="field">Flight time (h)<input type="number" id="fHours" min="0" step="0.1" inputmode="decimal"></label>
+          <label class="field wide">Type
+            <select id="fKind"><option value="dual">Dual, with instructor</option><option value="solo">Solo</option></select>
+          </label>
+          <label class="field">Cross-country (h)<input type="number" id="fXc" min="0" step="0.1" inputmode="decimal"></label>
+          <label class="field">Night (h)<input type="number" id="fNight" min="0" step="0.1" inputmode="decimal"></label>
+          <label class="field">Instrument (h)<input type="number" id="fInst" min="0" step="0.1" inputmode="decimal"></label>
+          <label class="field">Full-stop landings<input type="number" id="fLdg" min="0" step="1" inputmode="numeric"></label>
+          <label class="field">Of those, at night<input type="number" id="fNightLdg" min="0" step="1" inputmode="numeric"></label>
+          <label class="field">Of those, towered<input type="number" id="fTowerLdg" min="0" step="1" inputmode="numeric"></label>
+          <label class="field wide">Note<input type="text" id="fNote" maxlength="120" placeholder="Aircraft, route, what you worked on"></label>
+        </div>
+        <p class="hint">Solo includes time flown alone as pilot in command after a Sport certificate.</p>
+        <p class="error" id="logError" role="alert"></p>
+        <button class="primary" id="addFlight" type="button">Add flight</button>
+      </section>
+
+      <section aria-labelledby="flightsH">
+        <h2 id="flightsH">Flights</h2>
+        <div id="flightList"></div>
+      </section>
+    </aside>
+  </div>
+
+  <footer>
+    <p>Hour minimums follow 14 CFR 61.109 (Private) and 61.313 (Sport). Confirm them with your instructor before relying on a number here.</p>
+    <div>
+      <span id="status" aria-live="polite"></span>
+      <span id="clearBox"></span>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- content ---------- */
+var ITEMS = {
+  "iacra":{t:"Create an IACRA account and get your FAA Tracking Number"},
+  "medical":{t:"Third-class medical from an aviation medical examiner",d:"Fill out MedXPress first. Under 40 it lasts 60 calendar months; 40 or older, 24."},
+  "student":{t:"Student pilot certificate issued through IACRA",d:"Needed before solo, not before lessons."},
+  "tsa":{t:"Instructor verifies citizenship and logs the TSA endorsement"},
+  "gear":{t:"Logbook, headset, and renter's insurance in hand"},
+  "presolo-train":{t:"Pre-solo maneuvers training complete",d:"The 61.87 list: takeoffs and landings, stalls, slow flight, ground reference, emergencies, go-arounds."},
+  "presolo-written":{t:"Pre-solo written passed and reviewed with your instructor"},
+  "solo-endorse":{t:"Solo endorsements logged",d:"Make and model specific, good for 90 days."},
+  "first-solo":{t:"First solo",m:true},
+  "sp-block1":{t:"First block of your ground school course finished",d:"Check this off when its review quiz is done."},
+  "ground":{t:"Ground school course completed",d:"An online course, a classroom course or ground lessons with your instructor."},
+  "sp-test1":{t:"First practice knowledge test passed",d:"Score 80% or higher."},
+  "sp-test2":{t:"Second practice knowledge test passed",d:"Score 80% or higher."},
+  "par-endorse":{t:"Endorsement to take the Private knowledge test",d:"From your instructor, or from your ground school course if it issues one."},
+  "par":{t:"Private Pilot Airplane knowledge test passed",d:"60 questions, 70% to pass, valid 24 calendar months."},
+  "p-dual-xc":{t:"3 hours of dual cross-country",a:["dualXc",3,"h"]},
+  "p-night":{t:"3 hours of dual night flying",a:["nightDual",3,"h"]},
+  "p-night-xc":{t:"Dual night cross-country over 100 nm total distance"},
+  "p-night-ldg":{t:"10 night full-stop takeoffs and landings",a:["nightLdg",10,"landings"]},
+  "p-inst":{t:"3 hours of dual flight by reference to instruments",a:["inst",3,"h"]},
+  "p-dual":{t:"20 hours of dual instruction",a:["dual",20,"h"]},
+  "xc-endorse":{t:"Solo cross-country endorsements logged",d:"One general endorsement, plus one for each flight."},
+  "p-solo":{t:"10 hours of solo flight",a:["solo",10,"h"]},
+  "p-solo-xc":{t:"5 hours of solo cross-country",a:["soloXc",5,"h"]},
+  "p-long-xc":{t:"Long solo cross-country flown",d:"150 nm total, full stops at three points, one leg over 50 nm straight-line."},
+  "p-tower":{t:"3 solo full-stop landings at a towered airport",a:["towerSolo",3,"landings"]},
+  "p-total":{t:"40 hours of total flight time",a:["total",40,"h"]},
+  "p-prep":{t:"3 hours of checkride prep within 2 calendar months of the test"},
+  "p-mock":{t:"Mock checkride flown to Private ACS standards",d:"Ideally with a second instructor."},
+  "p-endorse":{t:"Practical test endorsements logged",d:"Including a review of the knowledge test questions you missed."},
+  "p-8710":{t:"IACRA application completed and signed by your instructor"},
+  "p-dpe":{t:"Examiner scheduled",d:"Book early. Waits often run weeks to months."},
+  "p-aircraft":{t:"Aircraft documents and maintenance logs checked for the exam"},
+  "p-checkride":{t:"Private Pilot checkride passed",m:true},
+
+  "s-dl":{t:"Valid US driver's license on hand as your medical qualification"},
+  "s-aircraft":{t:"Training aircraft chosen with a clean stall speed of 59 knots CAS or less",d:"A Cessna 172 or Piper Cherokee qualifies, so you can keep the same airplane for Private."},
+  "s-cfi":{t:"Instructor holds a standard (subpart H) certificate",d:"Keeps every dual hour countable toward Private."},
+  "s-written-endorse":{t:"Endorsement to take the Sport knowledge test",d:"From your instructor, or from your ground school course if it issues one."},
+  "s-written":{t:"Sport Pilot knowledge test passed",d:"40 questions, 70% to pass."},
+  "s-dual-xc":{t:"2 hours of dual cross-country",a:["dualXc",2,"h"]},
+  "s-ldg":{t:"10 full-stop takeoffs and landings",a:["ldg",10,"landings"]},
+  "s-dual":{t:"15 hours of dual instruction",a:["dual",15,"h"]},
+  "s-solo":{t:"5 hours of solo flight",a:["solo",5,"h"]},
+  "s-solo-xc":{t:"Solo cross-country flown",d:"75 nm or more total, full stops at two points, one leg of 25 nm or more."},
+  "s-airspace":{t:"Class B, C, and D airspace endorsement logged",d:"Needed to fly into towered airports as a Sport pilot."},
+  "s-total":{t:"20 hours of total flight time",a:["total",20,"h"]},
+  "s-prep":{t:"2 hours of checkride prep within 2 calendar months of the test"},
+  "s-endorse":{t:"Sport practical test endorsements logged"},
+  "s-8710":{t:"IACRA application for Sport completed and signed"},
+  "s-dpe":{t:"Sport examiner scheduled"},
+  "s-docs":{t:"Aircraft documents and maintenance logs checked for the Sport exam"},
+  "s-checkride":{t:"Sport Pilot checkride passed",m:true,d:"Day VFR with one passenger."}
+};
+
+var TRACKS = {
+  A:{name:"Private direct",stages:[{title:null,phases:[
+    {t:"Eligibility and paperwork",note:"Get the medical done before you spend much on lessons. It is the one item that can stop everything.",items:["iacra","medical","student","tsa","gear"]},
+    {t:"Pre-solo",items:["presolo-train","presolo-written","solo-endorse","first-solo"]},
+    {t:"Knowledge test",note:"Runs alongside pre-solo training.",items:["sp-block1","ground","sp-test1","sp-test2","par-endorse","par"]},
+    {t:"Dual experience",items:["p-dual-xc","p-night","p-night-xc","p-night-ldg","p-inst","p-dual"]},
+    {t:"Solo experience",items:["xc-endorse","p-solo","p-solo-xc","p-long-xc","p-tower","p-total"]},
+    {t:"Checkride",items:["p-prep","p-mock","p-endorse","p-8710","p-dpe","p-aircraft","p-checkride"]}
+  ]}]},
+  B:{name:"Sport, then Private",stages:[
+    {title:"Stage 1, Sport Pilot",phases:[
+      {t:"Eligibility and setup",caution:"Hold off on MedXPress until you are confident of passing. A denied medical closes the driver's license path too. A consultation-only visit with an examiner is the safe way to find out.",items:["iacra","s-dl","student","tsa","s-aircraft","s-cfi","gear"]},
+      {t:"Pre-solo",items:["presolo-train","presolo-written","solo-endorse","first-solo"]},
+      {t:"Sport knowledge test",items:["sp-block1","ground","sp-test1","sp-test2","s-written-endorse","s-written"]},
+      {t:"Sport experience",items:["s-dual-xc","s-ldg","s-dual","xc-endorse","s-solo","s-solo-xc","s-airspace","s-total"]},
+      {t:"Sport checkride",items:["s-prep","s-endorse","s-8710","s-dpe","s-docs","s-checkride"]}
+    ]},
+    {title:"Stage 2, upgrade to Private",phases:[
+      {t:"Medical and knowledge test",note:"Every hour from Stage 1 carries forward. The Sport written does not.",items:["medical","par-endorse","par"]},
+      {t:"Dual experience",items:["p-dual-xc","p-night","p-night-xc","p-night-ldg","p-inst","p-dual"]},
+      {t:"Solo experience",note:"The 75 nm Sport cross-country does not satisfy the 150 nm requirement.",items:["p-solo","p-solo-xc","p-long-xc","p-tower","p-total"]},
+      {t:"Private checkride",items:["p-prep","p-mock","p-endorse","p-8710","p-dpe","p-aircraft","p-checkride"]}
+    ]}
+  ]}
+};
+
+var APT = '<svg class="apt" viewBox="0 0 24 24" aria-hidden="true"><g stroke="currentColor" stroke-width="2.4" stroke-linecap="butt"><path d="M12 0v5M12 19v5M0 12h5M19 12h5"/></g><circle cx="12" cy="12" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>';
+
+/* ---------- state ---------- */
+var state = {track:"A",done:{}};
+var flights = [];
+var loading = true, readOnly = false, mode = "local";
+var db = null, progressRef = null;
+var dirty = false, writing = false, saveTimer = null;
+var showAllFlights = false, confirmClear = false;
+
+/* ---------- helpers ---------- */
+function $(id){return document.getElementById(id);}
+function h(tag,attrs){
+  var e=document.createElement(tag),k,v,i,c;
+  for(k in (attrs||{})){
+    v=attrs[k];
+    if(v==null||v===false) continue;
+    if(k==="class") e.className=v;
+    else if(k==="text") e.textContent=v;
+    else if(k.slice(0,2)==="on") e.addEventListener(k.slice(2),v);
+    else if(v===true) e.setAttribute(k,"");
+    else e.setAttribute(k,v);
+  }
+  for(i=2;i<arguments.length;i++){
+    c=arguments[i];
+    if(c==null||c===false) continue;
+    if(Array.isArray(c)) c.forEach(function(x){if(x) e.appendChild(x.nodeType?x:document.createTextNode(String(x)));});
+    else e.appendChild(c.nodeType?c:document.createTextNode(String(c)));
+  }
+  return e;
+}
+function num(v){var n=parseFloat(v);return isFinite(n)&&n>0?n:0;}
+function fmt(n,unit){return unit==="h"?(Math.round(n*10)/10).toFixed(1):String(Math.round(n));}
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function niceDate(iso){
+  if(typeof iso!=="string"||!/^\d{4}-\d{2}-\d{2}/.test(iso)) return "";
+  var p=iso.slice(0,10).split("-");
+  var d=new Date(+p[0],+p[1]-1,+p[2]);
+  return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:d.getFullYear()===new Date().getFullYear()?undefined:"numeric"});
+}
+function setStatus(msg){$("status").textContent=msg||"";}
+
+function tally(){
+  var t={total:0,dual:0,solo:0,dualXc:0,soloXc:0,nightDual:0,inst:0,ldg:0,nightLdg:0,towerSolo:0};
+  flights.forEach(function(f){
+    var hrs=num(f.hours),dual=f.kind!=="solo";
+    t.total+=hrs;
+    if(dual){t.dual+=hrs;t.dualXc+=num(f.xc);t.nightDual+=num(f.night);t.inst+=num(f.inst);t.nightLdg+=num(f.nightLdg);}
+    else{t.solo+=hrs;t.soloXc+=num(f.xc);t.towerSolo+=num(f.towerLdg);}
+    t.ldg+=num(f.ldg);
+  });
+  return t;
+}
+function autoMet(item,t){return !!item.a && t[item.a[0]] >= item.a[1]-1e-9;}
+function isDone(id,t){return !!state.done[id] || autoMet(ITEMS[id],t);}
+function trackIds(){
+  var ids=[];
+  TRACKS[state.track].stages.forEach(function(s){s.phases.forEach(function(p){p.items.forEach(function(id){if(ids.indexOf(id)<0) ids.push(id);});});});
+  return ids;
+}
+function bar(value,need){
+  var pct=Math.max(0,Math.min(100,need?value/need*100:0));
+  var b=h("div",{class:"bar"+(pct>=100?" full":"")},h("i"));
+  b.firstChild.style.width=pct+"%";
+  return b;
+}
+
+/* ---------- render ---------- */
+function renderSummary(t){
+  var ids=trackIds(),done=0,next=null;
+  ids.forEach(function(id){
+    if(isDone(id,t)) done++;
+    else if(ITEMS[id].m && !next) next=ITEMS[id].t;
+  });
+  var el=$("summary");
+  el.textContent="";
+  if(loading){el.textContent="Loading your progress.";return;}
+  el.appendChild(h("strong",{text:done+" of "+ids.length}));
+  el.appendChild(document.createTextNode(" items done, "+fmt(t.total,"h")+" hours logged. "));
+  el.appendChild(document.createTextNode(next?("Next milestone: "+next.toLowerCase()+"."):"Every milestone is behind you."));
+}
+
+function renderItem(id,t){
+  var it=ITEMS[id],auto=autoMet(it,t),done=isDone(id,t),cid="c-"+id;
+  var box=h("input",{type:"checkbox",id:cid,checked:done,disabled:loading||readOnly||auto,
+    onchange:function(ev){toggle(id,ev.target.checked);}});
+  box.checked=done;
+  var when="";
+  if(auto) when="from your log";
+  else if(done) when=niceDate(state.done[id]);
+  var li=h("li",{class:"item"+(done?" done":"")+(it.m?" milestone":"")},
+    box,
+    h("label",{for:cid,text:it.t}),
+    h("span",{class:"when",text:when})
+  );
+  if(it.m){var s=document.createElement("span");s.innerHTML=APT;li.insertBefore(s.firstChild,li.firstChild);}
+  if(it.a){
+    var v=Math.min(t[it.a[0]],it.a[1]);
+    li.appendChild(h("span",{class:"detail",text:fmt(t[it.a[0]],it.a[2])+" of "+fmt(it.a[1],it.a[2])+(it.a[2]==="h"?" hours":" "+it.a[2])}));
+    li.appendChild(bar(v,it.a[1]));
+  }else if(it.d){
+    li.appendChild(h("span",{class:"detail",text:it.d}));
+  }
+  return li;
+}
+
+function renderChecklist(t){
+  var root=$("checklist"),active=document.activeElement&&document.activeElement.id;
+  root.textContent="";
+  TRACKS[state.track].stages.forEach(function(stage){
+    if(stage.title) root.appendChild(h("h2",{class:"stage-title",text:stage.title}));
+    var route=h("div",{class:"route"});
+    stage.phases.forEach(function(p){
+      var n=0;
+      p.items.forEach(function(id){if(isDone(id,t)) n++;});
+      route.appendChild(h("section",{class:"phase"+(n===p.items.length?" complete":"")},
+        h("span",{class:"node","aria-hidden":"true"}),
+        h("div",{class:"phase-head"},h("h3",{text:p.t}),h("span",{class:"count",text:n+" of "+p.items.length})),
+        p.note?h("p",{class:"phase-note",text:p.note}):null,
+        p.caution?h("p",{class:"caution",text:p.caution}):null,
+        h("ul",{class:"items"},p.items.map(function(id){return renderItem(id,t);}))
+      ));
+    });
+    root.appendChild(route);
+  });
+  if(active&&active.indexOf("c-")===0&&$(active)) $(active).focus();
+}
+
+function meter(label,value,need){
+  return h("div",{class:"meter"},
+    h("div",{class:"meter-row"},h("span",{text:label}),h("span",{text:fmt(value,"h")+" of "+need+" h"})),
+    bar(Math.min(value,need),need));
+}
+function renderMeters(t){
+  var root=$("meters");
+  root.textContent="";
+  if(state.track==="B"){
+    root.appendChild(h("p",{class:"group-name",text:"Toward Sport"}));
+    root.appendChild(meter("Total",t.total,20));
+    root.appendChild(meter("Dual",t.dual,15));
+    root.appendChild(meter("Solo",t.solo,5));
+    root.appendChild(h("p",{class:"group-name",text:"Toward Private"}));
+  }
+  root.appendChild(meter("Total",t.total,40));
+  root.appendChild(meter("Dual",t.dual,20));
+  root.appendChild(meter("Solo",t.solo,10));
+}
+
+function renderFlights(){
+  var root=$("flightList");
+  root.textContent="";
+  if(!flights.length){
+    root.appendChild(h("p",{class:"empty",text:loading?"Loading.":"No flights yet. Add your first one above and the hour requirements fill in on their own."}));
+    return;
+  }
+  var sorted=flights.slice().sort(function(a,b){
+    var d=String(b.date||"").localeCompare(String(a.date||""));
+    return d||String(b.createdAt||"").localeCompare(String(a.createdAt||""));
+  });
+  var shown=showAllFlights?sorted:sorted.slice(0,6);
+  root.appendChild(h("ul",{class:"flights"},shown.map(function(f){
+    var tags=[];
+    if(num(f.xc)) tags.push(fmt(num(f.xc),"h")+" cross-country");
+    if(num(f.night)) tags.push(fmt(num(f.night),"h")+" night");
+    if(num(f.inst)) tags.push(fmt(num(f.inst),"h")+" instrument");
+    if(num(f.ldg)) tags.push(Math.round(num(f.ldg))+" landings");
+    var line=[tags.join(", "),f.note?String(f.note):""].filter(Boolean).join(". ");
+    return h("li",{class:"flight"},
+      h("div",{class:"flight-top"},
+        h("span",{},h("strong",{text:fmt(num(f.hours),"h")+" h"})," "+(f.kind==="solo"?"solo":"dual")+", "+(niceDate(f.date)||"no date")),
+        h("button",{class:"quiet",type:"button",disabled:readOnly,"aria-label":"Remove flight from "+(niceDate(f.date)||"log"),
+          onclick:function(){removeFlight(f.id);}},"Remove")),
+      line?h("div",{class:"tags",text:line}):null);
+  })));
+  if(sorted.length>6){
+    root.appendChild(h("p",{class:"hint"},h("button",{class:"quiet",type:"button",
+      onclick:function(){showAllFlights=!showAllFlights;renderFlights();}},showAllFlights?"Show recent only":"Show all "+sorted.length+" flights")));
+  }
+}
+
+function renderClear(){
+  var root=$("clearBox");
+  root.textContent="";
+  if(loading||readOnly||!Object.keys(state.done).length) return;
+  if(!confirmClear){
+    root.appendChild(document.createTextNode(" "));
+    root.appendChild(h("button",{class:"quiet",type:"button",onclick:function(){confirmClear=true;renderClear();}},"Clear checkmarks"));
+    return;
+  }
+  root.appendChild(h("span",{class:"confirm"}," Clear every checkmark? Flights stay.",
+    h("button",{class:"quiet",type:"button",onclick:function(){confirmClear=false;state.done={};saveProgress();renderAll();}},"Clear checkmarks"),
+    h("button",{class:"quiet",type:"button",onclick:function(){confirmClear=false;renderClear();}},"Keep them")));
+}
+
+function renderAll(){
+  var t=tally();
+  $("trackA").checked=state.track==="A";
+  $("trackB").checked=state.track==="B";
+  $("trackA").disabled=$("trackB").disabled=loading||readOnly;
+  $("addFlight").disabled=loading||readOnly;
+  renderSummary(t);renderChecklist(t);renderMeters(t);renderFlights();renderClear();
+}
+
+/* ---------- actions ---------- */
+function toggle(id,on){
+  if(on) state.done[id]=today(); else delete state.done[id];
+  saveProgress();renderAll();
+}
+function setTrack(v){
+  if(state.track===v) return;
+  state.track=v;saveProgress();renderAll();
+}
+
+function saveProgress(){
+  if(mode==="local"){
+    try{localStorage.setItem("ft-progress",JSON.stringify(state));}catch(e){setStatus("This browser blocked saving, so changes last only until you close the page.");}
+    return;
+  }
+  dirty=true;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(flush,450);
+}
+function flush(){
+  if(writing||!dirty||!progressRef) return;
+  writing=true;dirty=false;
+  var body={track:state.track,done:JSON.parse(JSON.stringify(state.done)),updatedAt:new Date().toISOString()};
+  writeWithRetry(function(){return progressRef.set(body);}).then(function(){
+    writing=false;setStatus("Saved.");
+    if(dirty) flush();
+  },function(e){
+    writing=false;handleWriteError(e);
+  });
+}
+function writeWithRetry(fn){
+  return fn().catch(function(e){
+    if(e&&e.code==="unavailable"){
+      return new Promise(function(res){setTimeout(res,600+Math.random()*900);}).then(fn);
+    }
+    throw e;
+  });
+}
+function handleWriteError(e){
+  var code=e&&e.code;
+  if(code==="invalid_argument"||code==="not_granted"||code==="revoked"){
+    readOnly=true;setStatus("You can view this tracker but not change it.");renderAll();
+  }else if(code==="quota_exceeded"){
+    setStatus("The tracker's storage is full. Remove a few old flights, then try again.");
+  }else{
+    setStatus("That change didn't save. Check your connection and make it again.");
+  }
+}
+
+function readForm(){
+  var f={date:$("fDate").value||today(),hours:num($("fHours").value),kind:$("fKind").value==="solo"?"solo":"dual",
+    xc:num($("fXc").value),night:num($("fNight").value),inst:num($("fInst").value),
+    ldg:Math.round(num($("fLdg").value)),nightLdg:Math.round(num($("fNightLdg").value)),towerLdg:Math.round(num($("fTowerLdg").value)),
+    note:$("fNote").value.trim().slice(0,120),createdAt:new Date().toISOString()};
+  if(!f.hours) return {error:"Enter the flight time in hours, like 1.3."};
+  if(f.hours>24) return {error:"Flight time looks too long. Enter hours, like 1.3."};
+  if(f.xc>f.hours||f.night>f.hours||f.inst>f.hours) return {error:"Cross-country, night, and instrument time can't exceed the flight time."};
+  if(f.nightLdg>f.ldg||f.towerLdg>f.ldg) return {error:"Night and towered landings are part of the full-stop count, so they can't exceed it."};
+  return {flight:f};
+}
+function resetForm(){
+  ["fHours","fXc","fNight","fInst","fLdg","fNightLdg","fTowerLdg","fNote"].forEach(function(id){$(id).value="";});
+}
+function addFlight(){
+  var r=readForm();
+  $("logError").textContent=r.error||"";
+  if(r.error) return;
+  if(mode==="local"){
+    r.flight.id="f"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    flights.push(r.flight);saveLocalFlights();resetForm();renderAll();return;
+  }
+  var btn=$("addFlight");
+  btn.disabled=true;
+  var ref=db.collection("flights").doc();
+  writeWithRetry(function(){return ref.set(r.flight);}).then(function(){
+    btn.disabled=false;resetForm();setStatus("Flight added.");
+  },function(e){btn.disabled=false;handleWriteError(e);});
+}
+function removeFlight(id){
+  if(mode==="local"){
+    flights=flights.filter(function(f){return f.id!==id;});saveLocalFlights();renderAll();return;
+  }
+  writeWithRetry(function(){return db.collection("flights").doc(id).delete();}).then(function(){setStatus("Flight removed.");},handleWriteError);
+}
+function saveLocalFlights(){
+  try{localStorage.setItem("ft-flights",JSON.stringify(flights));}catch(e){setStatus("This browser blocked saving, so changes last only until you close the page.");}
+}
+
+/* ---------- storage start-up ---------- */
+function adopt(data){
+  if(!data||typeof data!=="object") return;
+  state.track=data.track==="B"?"B":"A";
+  state.done={};
+  var d=data.done;
+  if(d&&typeof d==="object") Object.keys(d).forEach(function(k){if(ITEMS[k]&&d[k]) state.done[k]=typeof d[k]==="string"?d[k]:today();});
+}
+function startLocal(){
+  mode="local";
+  try{adopt(JSON.parse(localStorage.getItem("ft-progress")||"null"));}catch(e){}
+  try{var f=JSON.parse(localStorage.getItem("ft-flights")||"[]");if(Array.isArray(f)) flights=f;}catch(e){}
+  loading=false;
+  setStatus("Progress is kept in this browser only.");
+  renderAll();
+}
+function startDb(d){
+  db=d;mode="db";
+  progressRef=db.doc("tracker/progress");
+  progressRef.onSnapshot(function(snap){
+    if(!dirty&&!writing&&snap.exists) adopt(snap.data());
+    loading=false;renderAll();
+  },function(e){
+    loading=false;
+    if(e&&e.code==="revoked"){readOnly=true;setStatus("This tracker is read-only right now.");}
+    else setStatus("Live updates stopped. Reload the page to reconnect.");
+    renderAll();
+  });
+  db.collection("flights").onSnapshot(function(snap){
+    flights=snap.docs.map(function(doc){var o=Object.assign({},doc.data());o.id=doc.id;return o;});
+    renderAll();
+  },function(){setStatus("Live updates stopped. Reload the page to reconnect.");});
+}
+
+/* ---------- wire up ---------- */
+$("fDate").value=today();
+$("trackA").addEventListener("change",function(){setTrack("A");});
+$("trackB").addEventListener("change",function(){setTrack("B");});
+$("addFlight").addEventListener("click",addFlight);
+$("logForm").addEventListener("keydown",function(ev){if(ev.key==="Enter"&&ev.target.tagName==="INPUT"){ev.preventDefault();addFlight();}});
+renderAll();
+
+if(window.claude&&typeof window.claude.use==="function"){
+  window.claude.use("db").then(function(d){if(d) startDb(d); else startLocal();},startLocal);
+}else{
+  startLocal();
+}
+})();
+</script>
+</body>
+</html>

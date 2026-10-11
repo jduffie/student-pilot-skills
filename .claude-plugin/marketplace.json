@@ -1,0 +1,14 @@
+{
+  "name": "student-pilot-skills",
+  "description": "Hands-free study skills for student pilots.",
+  "owner": {
+    "name": "John Duffie"
+  },
+  "plugins": [
+    {
+      "name": "student-pilot",
+      "source": "./",
+      "description": "Hands-free practice for student pilots: radio calls, post-lesson debriefs that follow FAA logging rules, and an oral quiz with a checked answer key."
+    }
+  ]
+}

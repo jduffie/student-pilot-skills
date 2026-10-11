@@ -1,0 +1,11 @@
+{
+  "name": "student-pilot",
+  "displayName": "Student Pilot",
+  "version": "0.1.0",
+  "description": "Hands-free practice for student pilots: radio calls, post-lesson debriefs that follow FAA logging rules, and an oral quiz with a checked answer key.",
+  "author": {
+    "name": "John Duffie"
+  },
+  "license": "MIT",
+  "keywords": ["aviation", "student-pilot", "flight-training", "private-pilot", "voice"]
+}
